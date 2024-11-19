@@ -56,3 +56,70 @@ EOF
 
   create_namespace = true
 }
+
+/*****************************************************
+                Deploy Contener Hello-world 
+******************************************************/
+
+
+resource "kubernetes_config_map" "hello_world_html" {
+  metadata {
+    name = "hello-world-html"
+  }
+
+  data = {
+    "index.html" = "<html><body><h1>Hello world</h1></body></html>"
+  }
+}
+
+resource "kubernetes_pod" "hello_world" {
+  metadata {
+    name = "hello-world"
+    labels = {
+      app = "MyApp"
+    }
+  }
+
+  spec {
+    container {
+      image = "httpd:2.4"
+      name  = "hello-world"
+
+      volume_mount {
+        mount_path = "/usr/local/apache2/htdocs"
+        name       = "html-volume"
+      }
+    }
+
+    volume {
+      name = "html-volume"
+
+      config_map {
+        name = kubernetes_config_map.hello_world_html.metadata[0].name
+      }
+    }
+  }
+}
+
+resource "kubernetes_service" "hello_world_service" {
+  metadata {
+    name = "hello-world-service"
+    annotations = {
+      "service.beta.kubernetes.io/scw-loadbalancer-id" = scaleway_lb.ingress_lb.id
+    }
+  }
+
+  spec {
+    selector = {
+      app = "MyApp"
+    }
+
+    port {
+      port        = 80
+      target_port = 80
+    }
+
+    type = "LoadBalancer"
+  }
+}
+
