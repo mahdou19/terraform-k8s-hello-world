@@ -36,3 +36,23 @@ resource "scaleway_lb" "ingress_lb" {
   ip_ids = [scaleway_lb_ip.ingress_ip.id]
   type   = "LB-S"
 }
+
+resource "helm_release" "nginx_ingress" {
+  name       = "nginx-ingress"
+  namespace  = "ingress-nginx"
+  repository = "https://kubernetes.github.io/ingress-nginx"
+  chart      = "ingress-nginx"
+  version    = "4.0.6"
+
+  values = [
+    <<EOF
+controller:
+  ingressClass: "nginx"
+  service:
+    externalIPs:
+      - ${scaleway_lb_ip.ingress_ip.ip_address}
+EOF
+  ]
+
+  create_namespace = true
+}
