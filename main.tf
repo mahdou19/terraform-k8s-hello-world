@@ -24,3 +24,15 @@ resource "scaleway_k8s_pool" "pool" {
   node_type  = "DEV1-M"
   size       = 1
 }
+
+/*****************************************************
+                Deploy Ingress Controller 
+******************************************************/
+
+resource "scaleway_lb_ip" "ingress_ip" {}
+
+resource "scaleway_lb" "ingress_lb" {
+  name   = "lb-${local.name}"
+  ip_ids = [scaleway_lb_ip.ingress_ip.id]
+  type   = "LB-S"
+}
